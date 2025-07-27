@@ -1,4 +1,4 @@
-resource "aws_ecr_repository" "strapi_repo" {
+data "aws_ecr_repository" "strapi_repo" {
   name = "strapi-ecs"
 }
 

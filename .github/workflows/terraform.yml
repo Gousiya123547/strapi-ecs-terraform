@@ -16,6 +16,16 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      - name: Download IMAGE_TAG Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: image_tag
+          path: .
+
+      - name: Read IMAGE_TAG
+        id: image_tag
+        run: echo "IMAGE_TAG=$(cat image_tag.txt)" >> $GITHUB_ENV
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -30,5 +40,5 @@ jobs:
         run: terraform -chdir=terraform init
 
       - name: Terraform Apply
-        run: terraform -chdir=terraform apply -auto-approve -var="image_tag=latest"
+        run: terraform -chdir=terraform apply -auto-approve -var="image_tag=${{ env.IMAGE_TAG }}"
 
