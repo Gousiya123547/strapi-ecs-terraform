@@ -1,9 +1,11 @@
-resource "aws_ecs_cluster" "strapi_cluster" {
-  name = "strapi-cluster"
+resource "random_string" "sg_suffix" {
+  length  = 4
+  upper   = false
+  special = false
 }
 
 resource "aws_security_group" "strapi_sg" {
-  name        = "strapi-sg"
+  name        = "gkk-strapi-sg-${random_string.sg_suffix.result}"
   description = "Allow Strapi traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -19,44 +21,6 @@ resource "aws_security_group" "strapi_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_ecs_task_definition" "strapi_task" {
-  family                   = "strapi-task"
-  requires_compatibilities = ["FARGATE"]
-  network_mode             = "awsvpc"
-  cpu                      = "256"
-  memory                   = "512"
-  execution_role_arn       = "arn:aws:iam::607700977843:role/ecs-task-execution-role"
-  task_role_arn            = "arn:aws:iam::607700977843:role/ecs-task-execution-role"
-
-  container_definitions = jsonencode([
-    {
-      name      = "strapi"
-      image     = "${aws_ecr_repository.strapi_repo.repository_url}:${var.image_tag}"
-      essential = true
-      portMappings = [
-        {
-          containerPort = 1337
-          hostPort      = 1337
-        }
-      ]
-    }
-  ])
-}
-
-resource "aws_ecs_service" "strapi_service" {
-  name            = "strapi-service"
-  cluster         = aws_ecs_cluster.strapi_cluster.id
-  task_definition = aws_ecs_task_definition.strapi_task.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets          = data.aws_subnets.default.ids
-    assign_public_ip = true
-    security_groups  = [aws_security_group.strapi_sg.id]
   }
 }
 
