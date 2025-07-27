@@ -30,7 +30,6 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          cd strapi
           IMAGE_TAG=${GITHUB_SHA::7}
           docker build -t $ECR_REPO_NAME:$IMAGE_TAG .
           docker tag $ECR_REPO_NAME:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO_NAME:$IMAGE_TAG
