@@ -12,19 +12,13 @@ env:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Download IMAGE_TAG Artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: image_tag
-          path: .
-
-      - name: Read IMAGE_TAG
-        id: image_tag
-        run: echo "IMAGE_TAG=$(cat image_tag.txt)" >> $GITHUB_ENV
+      - name: Set IMAGE_TAG from CI output
+        run: echo "IMAGE_TAG=${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.outputs.image_tag || 'latest' }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
