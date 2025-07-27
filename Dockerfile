@@ -2,13 +2,21 @@ FROM node:18
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
-RUN yarn install
+# Copy package.json and package-lock.json if available
+COPY package.json package-lock.json* ./
 
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the project
 COPY . .
 
-RUN yarn build
+# Build the Strapi application
+RUN npm run build
 
+# Expose the default Strapi port
 EXPOSE 1337
-CMD ["yarn", "start"]
+
+# Start Strapi
+CMD ["npm", "start"]
 
