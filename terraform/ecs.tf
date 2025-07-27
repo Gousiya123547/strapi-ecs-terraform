@@ -34,7 +34,7 @@ resource "aws_ecs_task_definition" "strapi_task" {
   container_definitions = jsonencode([
     {
       name      = "strapi"
-      image     = "${aws_ecr_repository.strapi_repo.repository_url}:latest"
+      image     = "${aws_ecr_repository.strapi_repo.repository_url}:${var.image_tag}"
       essential = true
       portMappings = [
         {
@@ -54,9 +54,9 @@ resource "aws_ecs_service" "strapi_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = data.aws_subnets.default.ids
+    subnets          = data.aws_subnets.default.ids
     assign_public_ip = true
-    security_groups = [aws_security_group.strapi_sg.id]
+    security_groups  = [aws_security_group.strapi_sg.id]
   }
 }
 
