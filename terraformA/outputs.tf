@@ -3,7 +3,7 @@ output "ecs_cluster_name" {
 }
 
 output "ecs_service_name" {
-  value = aws_ecs_service.strapi_kg.name
+  value = data.aws_ecs_service.strapi_kg.service_name
 }
 
 output "cloudwatch_log_group" {
