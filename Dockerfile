@@ -1,20 +1,24 @@
 FROM node:18
 
+# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json if available
+# Copy package files
 COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies, rebuild native modules (e.g., better-sqlite3)
+RUN npm install && npm rebuild better-sqlite3 --build-from-source
 
 # Copy the rest of the project
 COPY . .
 
-# Build the Strapi application
+# Copy .env file
+COPY .env .env
+
+# Build Strapi
 RUN npm run build
 
-# Expose the default Strapi port
+# Expose Strapi port
 EXPOSE 1337
 
 # Start Strapi

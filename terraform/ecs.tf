@@ -28,6 +28,10 @@ resource "aws_security_group" "strapi_sg" {
   }
 }
 
+resource "aws_cloudwatch_log_group" "strapi_logs" {
+  name = "/ecs/strapi"
+}
+
 resource "aws_ecs_task_definition" "strapi_task" {
   family                   = "strapi-task"
   requires_compatibilities = ["FARGATE"]
@@ -39,16 +43,38 @@ resource "aws_ecs_task_definition" "strapi_task" {
 
   container_definitions = jsonencode([
     {
-      name         = "strapi"
-      image        = "${data.aws_ecr_repository.strapi_repo.repository_url}:${var.image_tag}"
-      essential    = true
+      name      = "strapi"
+      image     = "${data.aws_ecr_repository.strapi_repo.repository_url}:${var.image_tag}"
+      essential = true
       portMappings = [
         {
           containerPort = 1337
           hostPort      = 1337
         }
       ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = "/ecs/strapi"
+          awslogs-region        = "us-east-2"
+          awslogs-stream-prefix = "ecs"
+        }
+      }
     }
   ])
+}
+
+resource "aws_ecs_service" "strapi_service" {
+  name            = "strapi-service"
+  cluster         = aws_ecs_cluster.strapi_cluster.id
+  task_definition = aws_ecs_task_definition.strapi_task.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = slice(data.aws_subnets.default.ids, 0, 2)
+    assign_public_ip = true
+    security_groups  = [aws_security_group.strapi_sg.id]
+  }
 }
 
