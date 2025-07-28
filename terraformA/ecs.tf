@@ -9,24 +9,13 @@ data "aws_subnets" "default" {
   }
 }
 
-resource "aws_security_group" "strapi_sg_kg" {
-  name        = "strapi-sg-kg"
-  description = "Allow Strapi traffic (KG)"
-  vpc_id      = data.aws_vpc.default.id
-
-  ingress {
-    from_port   = 1337
-    to_port     = 1337
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+# Use existing security group
+data "aws_security_group" "strapi_sg_kg" {
+  filter {
+    name   = "group-name"
+    values = ["strapi-sg-kg"]
   }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  vpc_id = data.aws_vpc.default.id
 }
 
 # Use existing CloudWatch log group
@@ -80,7 +69,7 @@ resource "aws_ecs_service" "strapi_kg" {
   network_configuration {
     subnets          = slice(data.aws_subnets.default.ids, 0, 2)
     assign_public_ip = true
-    security_groups  = [aws_security_group.strapi_sg_kg.id]
+    security_groups  = [data.aws_security_group.strapi_sg_kg.id]
   }
 }
 
