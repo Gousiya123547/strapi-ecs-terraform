@@ -5,7 +5,7 @@ on:
     workflows: ["CI-Build-Push-Image-KG"]
     types:
       - completed
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:  # Manual trigger for CD
 
 jobs:
   deploy:
