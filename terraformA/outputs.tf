@@ -7,7 +7,7 @@ output "ecs_service_name" {
 }
 
 output "cloudwatch_log_group" {
-  value = aws_cloudwatch_log_group.strapi_kg.name
+  value = data.aws_cloudwatch_log_group.strapi_kg.name
 }
 
 output "ecr_repository_url" {

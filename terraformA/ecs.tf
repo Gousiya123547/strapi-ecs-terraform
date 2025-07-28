@@ -29,9 +29,9 @@ resource "aws_security_group" "strapi_sg_kg" {
   }
 }
 
-resource "aws_cloudwatch_log_group" "strapi_kg" {
-  name              = "/ecs/strapi-kg"
-  retention_in_days = 30
+# Use existing CloudWatch log group
+data "aws_cloudwatch_log_group" "strapi_kg" {
+  name = "/ecs/strapi-kg"
 }
 
 resource "aws_ecs_cluster" "strapi_kg" {
@@ -49,19 +49,19 @@ resource "aws_ecs_task_definition" "strapi_kg" {
   container_definitions = jsonencode([
     {
       name      = "strapi"
-      image = "${data.aws_ecr_repository.strapi_kg.repository_url}:latest"
-
+      image     = "${data.aws_ecr_repository.strapi_kg.repository_url}:latest"
       essential = true
       portMappings = [
         {
           containerPort = 1337
           hostPort      = 1337
+          protocol      = "tcp"
         }
       ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = aws_cloudwatch_log_group.strapi_kg.name
+          awslogs-group         = data.aws_cloudwatch_log_group.strapi_kg.name
           awslogs-region        = var.aws_region
           awslogs-stream-prefix = "ecs"
         }
