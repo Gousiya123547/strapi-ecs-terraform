@@ -76,10 +76,10 @@ resource "aws_ecs_service" "strapi_kg" {
   desired_count   = 1
   launch_type     = "FARGATE"
 
- network_configuration {
-  subnets         = slice(data.aws_subnets.default.ids, 0, 2)
-  assign_public_ip = true
-  security_groups  = [aws_security_group.strapi_sg_kg.id]
-}
+  network_configuration {
+    subnets          = slice(data.aws_subnets.default.ids, 0, 2)
+    assign_public_ip = true
+    security_groups  = [aws_security_group.strapi_sg_kg.id]
+  }
 }
 
