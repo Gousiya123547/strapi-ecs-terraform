@@ -12,7 +12,7 @@ resource "aws_cloudwatch_metric_alarm" "high_cpu_kg" {
 
   dimensions = {
     ClusterName = aws_ecs_cluster.strapi_kg.name
-    ServiceName = aws_ecs_service.strapi_kg.name
+    ServiceName = aws_ecs_service.strapi_kg_spot.name
   }
 }
 

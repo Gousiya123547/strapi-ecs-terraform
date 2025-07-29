@@ -1,13 +1,7 @@
-#############################################
-# Data Sources
-#############################################
-
-# Default VPC
 data "aws_vpc" "default" {
   default = true
 }
 
-# Default Subnets in the VPC
 data "aws_subnets" "default" {
   filter {
     name   = "vpc-id"
@@ -24,7 +18,7 @@ data "aws_security_group" "strapi_sg_kg" {
   vpc_id = data.aws_vpc.default.id
 }
 
-# Existing CloudWatch Log Group
+# Existing CloudWatch log group
 data "aws_cloudwatch_log_group" "strapi_kg" {
   name = "/ecs/strapi-kg"
 }
@@ -34,16 +28,12 @@ data "aws_ecr_repository" "strapi_kg" {
   name = var.ecr_repo_name
 }
 
-#############################################
 # ECS Cluster
-#############################################
 resource "aws_ecs_cluster" "strapi_kg" {
   name = "strapi-cluster-kg"
 }
 
-#############################################
 # ECS Task Definition
-#############################################
 resource "aws_ecs_task_definition" "strapi_kg" {
   family                   = "strapi-task-kg"
   network_mode             = "awsvpc"
@@ -76,11 +66,9 @@ resource "aws_ecs_task_definition" "strapi_kg" {
   ])
 }
 
-#############################################
-# ECS Service (with FARGATE_SPOT)
-#############################################
-resource "aws_ecs_service" "strapi_kg" {
-  name            = "strapi-service-kg"
+# New ECS Service with FARGATE_SPOT
+resource "aws_ecs_service" "strapi_kg_spot" {
+  name            = "strapi-service-kg-spot"
   cluster         = aws_ecs_cluster.strapi_kg.id
   task_definition = aws_ecs_task_definition.strapi_kg.arn
   desired_count   = 1
@@ -91,11 +79,12 @@ resource "aws_ecs_service" "strapi_kg" {
   }
 
   network_configuration {
-    subnets          = data.aws_subnets.default.ids
+    subnets          = slice(data.aws_subnets.default.ids, 0, 2)
     assign_public_ip = true
     security_groups  = [data.aws_security_group.strapi_sg_kg.id]
   }
 
-  depends_on = [aws_ecs_task_definition.strapi_kg]
+  launch_type = null
+  depends_on  = [aws_ecs_task_definition.strapi_kg]
 }
 
