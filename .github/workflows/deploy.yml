@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -24,10 +25,10 @@ jobs:
       - name: Register new ECS task definition
         id: register-task
         run: |
-          export IMAGE_URI=607700977843.dkr.ecr.us-east-2.amazonaws.com/strapi-ecs-kg:latest
-          
+          IMAGE_URI=607700977843.dkr.ecr.us-east-2.amazonaws.com/strapi-ecs-kg:latest
+
           TASK_DEF=$(aws ecs describe-task-definition --task-definition gk-st-task)
-          
+
           NEW_TASK_DEF=$(echo $TASK_DEF | jq --arg IMAGE "$IMAGE_URI" '.taskDefinition | {
             family: .family,
             containerDefinitions: (.containerDefinitions | map(if .name == "strapi" then .image = $IMAGE else . end)),
@@ -37,11 +38,11 @@ jobs:
             cpu: .cpu,
             memory: .memory
           }')
-          
+
           echo "$NEW_TASK_DEF" > new-task-def.json
-          
+
           REVISION=$(aws ecs register-task-definition --cli-input-json file://new-task-def.json | jq -r '.taskDefinition.taskDefinitionArn')
-          
+
           echo "TASK_DEFINITION=$REVISION" >> $GITHUB_ENV
 
       - name: Trigger CodeDeploy deployment
@@ -52,7 +53,7 @@ jobs:
             --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
             --description "GitHub Actions deployment on $(date)" \
             --revision revisionType=AppSpecContent,appSpecContent="{
-              \"content\": \"version: 1\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: ${{ env.TASK_DEFINITION }}\n        LoadBalancerInfo:\n          ContainerName: strapi\n          ContainerPort: 1337\n        PlatformVersion: 1.4.0\n        ClusterName: gk-st-cluster\n        ServiceName: gk-st-service\n\",
+              \"content\": \"version: 1\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: ${{ env.TASK_DEFINITION }}\n        LoadBalancerInfo:\n          ContainerName: strapi\n          ContainerPort: 1337\n\",
               \"sha256\": \"\"
             }"
 
