@@ -28,11 +28,11 @@ jobs:
           terraform_version: 1.9.0
 
       - name: Terraform Init
-        run: cd terraformA && terraform init
+        run: cd terraform-blue-green-dep && terraform init
 
       - name: Terraform Plan
-        run: cd terraformA && terraform plan -out=tfplan
+        run: cd terraform-blue-green-dep && terraform plan -out=tfplan
 
       - name: Terraform Apply
-        run: cd terraformA && terraform apply -auto-approve tfplan
+        run: cd terraform-blue-green-dep && terraform apply -auto-approve tfplan
 
