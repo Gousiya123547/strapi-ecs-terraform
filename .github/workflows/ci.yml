@@ -1,41 +1,41 @@
-name: CI-Build-Push-Image-KG
+name: Build and Push Docker Image
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:  # Manual trigger for CI
+    paths:
+      - '**.ts'
+      - '**.js'
+      - Dockerfile
+      - .github/workflows/ci.yml
 
 env:
   AWS_REGION: us-east-2
-  ECR_REPO_NAME: strapi-ecs-kg
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+    - name: Log in to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and Push Docker Image
-        run: |
-          IMAGE_TAG=latest
-          docker build -t $ECR_REPO_NAME:$IMAGE_TAG .
-          docker tag $ECR_REPO_NAME:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO_NAME:$IMAGE_TAG
-          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO_NAME:$IMAGE_TAG
+    - name: Build and Tag Docker Image
+      run: |
+        docker build -t ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }} .
 
-      - name: Export Image URI
-        run: |
-          echo "IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/$ECR_REPO_NAME:latest" >> $GITHUB_ENV
+    - name: Push Docker Image to ECR
+      run: |
+        docker push ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
 

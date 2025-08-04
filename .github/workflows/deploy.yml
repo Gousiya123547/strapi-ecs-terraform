@@ -1,59 +1,82 @@
-name: Deploy Strapi with CodeDeploy
+name: Deploy Strapi ECS (Blue/Green)
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
+    paths-ignore:
+      - '.github/workflows/terraform.yml'
+      - 'terraform-strapi-siya/**'
+
+env:
+  AWS_REGION: us-east-2
+  ECR_REPO: ${{ secrets.ECR_REPOSITORY }}
+  ECS_CLUSTER: strapi-cluster-siya
+  ECS_SERVICE: strapi-service-siya
+  CODEDEPLOY_APP: strapi-cd-app-siya
+  CODEDEPLOY_DEPLOYMENT_GROUP: strapi-cd-dg-siya
+  TASK_DEFINITION_FILE: task-definition.json
 
 jobs:
   deploy:
-    name: Trigger CodeDeploy Deployment
+    name: Deploy Updated Task Definition
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
 
-      - name: Register new ECS task definition
-        id: register-task
-        run: |
-          IMAGE_URI=607700977843.dkr.ecr.us-east-2.amazonaws.com/strapi-ecs-kg:latest
+    - name: Log in to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v2
 
-          TASK_DEF=$(aws ecs describe-task-definition --task-definition gk-st-task)
+    - name: Set IMAGE_URI
+      run: echo "IMAGE_URI=$ECR_REPO:${{ github.sha }}" >> $GITHUB_ENV
 
-          NEW_TASK_DEF=$(echo $TASK_DEF | jq --arg IMAGE "$IMAGE_URI" '.taskDefinition | {
-            family: .family,
-            containerDefinitions: (.containerDefinitions | map(if .name == "strapi" then .image = $IMAGE else . end)),
-            executionRoleArn: .executionRoleArn,
-            networkMode: .networkMode,
-            requiresCompatibilities: .requiresCompatibilities,
-            cpu: .cpu,
-            memory: .memory
-          }')
+    - name: Update Task Definition with new Image
+      run: |
+        jq --arg IMAGE "$IMAGE_URI" '.containerDefinitions[0].image = $IMAGE' $TASK_DEFINITION_FILE > task-def-updated.json
 
-          echo "$NEW_TASK_DEF" > new-task-def.json
+    - name: Register New ECS Task Definition
+      id: register_task
+      run: |
+        TASK_DEF_ARN=$(aws ecs register-task-definition \
+          --cli-input-json file://task-def-updated.json \
+          --query 'taskDefinition.taskDefinitionArn' \
+          --output text)
+        echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
+        echo "task-definition-arn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
 
-          REVISION=$(aws ecs register-task-definition --cli-input-json file://new-task-def.json | jq -r '.taskDefinition.taskDefinitionArn')
+    - name: Create CodeDeploy Deployment
+      id: deploy_cd
+      run: |
+        DEPLOYMENT_ID=$(aws deploy create-deployment \
+          --application-name $CODEDEPLOY_APP \
+          --deployment-group-name $CODEDEPLOY_DEPLOYMENT_GROUP \
+          --revision revisionType=AppSpecContent,appSpecContent="{\"content\":\"version: 1.0\\nResources:\\n  - TargetService:\\n      Type: AWS::ECS::Service\\n      Properties:\\n        TaskDefinition: $TASK_DEF_ARN\\n        LoadBalancerInfo:\\n          ContainerName: strapi\\n          ContainerPort: 1337\\n\"}" \
+          --query "deploymentId" --output text)
+        echo "DEPLOYMENT_ID=$DEPLOYMENT_ID" >> $GITHUB_ENV
+        echo "deployment-id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
 
-          echo "TASK_DEFINITION=$REVISION" >> $GITHUB_ENV
-
-      - name: Trigger CodeDeploy deployment
-        run: |
-          aws deploy create-deployment \
-            --application-name gk-strapi-app \
-            --deployment-group-name gk-strapi-deployment-group \
-            --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
-            --description "GitHub Actions deployment on $(date)" \
-            --revision revisionType=AppSpecContent,appSpecContent="{
-              \"content\": \"version: 1\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: ${{ env.TASK_DEFINITION }}\n        LoadBalancerInfo:\n          ContainerName: strapi\n          ContainerPort: 1337\n\",
-              \"sha256\": \"\"
-            }"
+    - name: Monitor Deployment
+      run: |
+        echo "Waiting for deployment $DEPLOYMENT_ID to complete..."
+        STATUS="Created"
+        until [[ "$STATUS" == "Succeeded" || "$STATUS" == "Failed" ]]; do
+          STATUS=$(aws deploy get-deployment \
+            --deployment-id $DEPLOYMENT_ID \
+            --query "deploymentInfo.status" --output text)
+          echo "Current status: $STATUS"
+          sleep 15
+        done
+        if [ "$STATUS" == "Failed" ]; then
+          echo "Deployment failed. Check CodeDeploy console for details."
+          exit 1
+        fi
 

@@ -1,0 +1,12 @@
+{
+  "applicationName": "gk-strapi-app",
+  "deploymentGroupName": "gk-strapi-deployment-group",
+  "deploymentConfigName": "CodeDeployDefault.ECSAllAtOnce",
+  "revision": {
+    "revisionType": "AppSpecContent",
+    "appSpecContent": {
+      "content": "version: 1\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: arn:aws:ecs:us-east-2:607700977843:task-definition/gk-st-task:23\n        LoadBalancerInfo:\n          ContainerName: strapi\n          ContainerPort: 1337"
+    }
+  }
+}
+
