@@ -7,6 +7,8 @@ on:
     paths:
       - 'terraform-strapi-siya/**'
 
+  workflow_dispatch:  # Optional: lets you trigger manually
+
 env:
   AWS_REGION: us-east-2
 
@@ -42,8 +44,8 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -input=false
 
       - name: Terraform Apply (auto-approved)
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -input=false
 
