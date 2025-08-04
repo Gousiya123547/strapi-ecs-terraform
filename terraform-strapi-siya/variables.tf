@@ -7,3 +7,10 @@ variable "image_uri" {
   type        = string
 }
 
+variable "env" {
+  description = "Environment or suffix for naming"
+  type        = string
+  default     = "siya"
+}
+
+

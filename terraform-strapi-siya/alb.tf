@@ -1,5 +1,5 @@
 resource "aws_lb" "strapi_alb" {
-  name               = "strapi-alb-siya"
+  name               = "strapi-alb-${var.env}"
   internal           = false
   load_balancer_type = "application"
   subnets            = data.aws_subnets.default.ids
@@ -7,22 +7,24 @@ resource "aws_lb" "strapi_alb" {
 }
 
 resource "aws_lb_target_group" "strapi_tg_blue" {
-  name        = "strapi-tg-blue-siya"
+  name        = "strapi-tg-blue-${var.env}"
   port        = 1337
   protocol    = "HTTP"
   vpc_id      = data.aws_vpc.default.id
   target_type = "ip"
+
   health_check {
     path = "/"
   }
 }
 
 resource "aws_lb_target_group" "strapi_tg_green" {
-  name        = "strapi-tg-green-siya"
+  name        = "strapi-tg-green-${var.env}"
   port        = 1337
   protocol    = "HTTP"
   vpc_id      = data.aws_vpc.default.id
   target_type = "ip"
+
   health_check {
     path = "/"
   }
