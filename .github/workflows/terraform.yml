@@ -7,10 +7,11 @@ on:
     paths:
       - 'terraform-strapi-siya/**'
 
-  workflow_dispatch:  # Optional: lets you trigger manually
+  workflow_dispatch:  # Optional: allows manual trigger
 
 env:
   AWS_REGION: us-east-2
+  IMAGE_URI: 607700977843.dkr.ecr.us-east-2.amazonaws.com/strapi-ecs-kg:latest
 
 jobs:
   terraform:
@@ -44,8 +45,8 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -input=false
+        run: terraform plan -var="image_uri=${{ env.IMAGE_URI }}" -input=false
 
       - name: Terraform Apply (auto-approved)
-        run: terraform apply -auto-approve -input=false
+        run: terraform apply -auto-approve -var="image_uri=${{ env.IMAGE_URI }}" -input=false
 
