@@ -2,7 +2,8 @@ resource "aws_lb" "strapi_alb" {
   name               = "strapi-alb-${var.env}"
   internal           = false
   load_balancer_type = "application"
-  subnets            = data.aws_subnets.default.ids
+  subnets            = local.selected_subnets
+
   security_groups    = [aws_security_group.strapi_sg.id]
 }
 

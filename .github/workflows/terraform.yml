@@ -4,10 +4,8 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'terraform-strapi-siya/**'
 
-  workflow_dispatch:  # Optional: allows manual trigger
+  workflow_dispatch:  
 
 env:
   AWS_REGION: us-east-2
