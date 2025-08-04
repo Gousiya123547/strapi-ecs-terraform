@@ -1,4 +1,4 @@
-resource "aws_security_group" "strapi_sg" {
+resource "aws_security_group" "strapi_sg" {  #security group
   name        = "strapi-sg-siya"
   description = "Allow HTTP access for Strapi"
   vpc_id      = data.aws_vpc.default.id
