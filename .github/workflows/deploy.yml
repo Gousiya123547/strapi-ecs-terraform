@@ -33,19 +33,18 @@ jobs:
             --cli-input-json file://ecs-task-def.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
+          echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
           echo "taskDefinitionArn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
 
       - name: Trigger CodeDeploy Deployment
         run: |
-          TASK_DEF_ARN="${{ steps.register_taskdef.outputs.taskDefinitionArn }}"
-
           APP_SPEC=$(cat <<EOF
 version: 1
 Resources:
   - TargetService:
       Type: AWS::ECS::Service
       Properties:
-        TaskDefinition: "$TASK_DEF_ARN"
+        TaskDefinition: "${{ steps.register_taskdef.outputs.taskDefinitionArn }}"
         LoadBalancerInfo:
           ContainerName: "strapi"
           ContainerPort: 1337
