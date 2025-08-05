@@ -51,7 +51,7 @@ Resources:
           ContainerName: "strapi"
           ContainerPort: 1337
 EOF
-          )
+)
 
           ESCAPED_APP_SPEC=$(echo "$APP_SPEC" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
 
