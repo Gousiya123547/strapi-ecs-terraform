@@ -39,6 +39,7 @@ jobs:
       - name: Trigger CodeDeploy Deployment
         run: |
           TASK_DEF_ARN="${{ steps.register_taskdef.outputs.taskDefinitionArn }}"
+
           APP_SPEC=$(cat <<EOF
 version: 1
 Resources:
@@ -51,6 +52,7 @@ Resources:
           ContainerPort: 1337
 EOF
 )
+
           ESCAPED_APP_SPEC=$(echo "$APP_SPEC" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
 
           aws deploy create-deployment \
