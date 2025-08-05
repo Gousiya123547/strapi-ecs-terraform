@@ -33,26 +33,45 @@ jobs:
             --cli-input-json file://task-definition.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
-          echo "taskDefinitionArn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
           echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
+          echo "taskDefinitionArn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
 
       - name: Trigger CodeDeploy Deployment
         run: |
           echo "Generating AppSpecContent..."
 
-          APPSPEC=$(jq -n \
-            --arg taskDef "$TASK_DEF_ARN" \
-            --arg content "version: 1\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: \"$taskDef\"\n        LoadBalancerInfo:\n          ContainerName: \"strapi\"\n          ContainerPort: 1337" \
+          CONTENT=$(cat <<EOF
+version: 1
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: "$TASK_DEF_ARN"
+        LoadBalancerInfo:
+          ContainerName: "strapi"
+          ContainerPort: 1337
+EOF
+)
+
+          JSON=$(jq -n \
+            --arg app "$CODEDEPLOY_APP" \
+            --arg dg "$CODEDEPLOY_DEPLOYMENT_GROUP" \
+            --arg content "$CONTENT" \
+            --arg region "$AWS_REGION" \
             '{
-              revisionType: "AppSpecContent",
-              appSpecContent: {
-                content: $content
+              applicationName: $app,
+              deploymentGroupName: $dg,
+              revision: {
+                revisionType: "AppSpecContent",
+                appSpecContent: {
+                  content: $content
+                }
               }
             }')
 
+          echo "Creating deployment..."
+          echo "$JSON" > input.json
           aws deploy create-deployment \
-            --application-name "$CODEDEPLOY_APP" \
-            --deployment-group-name "$CODEDEPLOY_DEPLOYMENT_GROUP" \
-            --cli-input-json "$APPSPEC" \
-            --region $AWS_REGION
+            --cli-input-json file://input.json \
+            --region "$AWS_REGION"
 
