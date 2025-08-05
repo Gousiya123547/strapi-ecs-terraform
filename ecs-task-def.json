@@ -1,0 +1,31 @@
+{
+  "family": "strapi-task-siya",
+  "networkMode": "awsvpc",
+  "executionRoleArn": "arn:aws:iam::607700977843:role/strapi-ecs-task-exec-siya",
+  "containerDefinitions": [
+    {
+      "name": "strapi",
+      "image": "607700977843.dkr.ecr.us-east-2.amazonaws.com/strapi-ecs-kg:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 1337,
+          "protocol": "tcp"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/strapi-siya",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "taskRoleArn": "arn:aws:iam::607700977843:role/strapi-ecs-task-exec-siya"
+}
+
