@@ -37,23 +37,10 @@ jobs:
 
       - name: Trigger CodeDeploy Deployment
         run: |
-          cat > appspec.yaml <<EOF
-version: 1
-Resources:
-  - TargetService:
-      Type: AWS::ECS::Service
-      Properties:
-        TaskDefinition: "${TASK_DEF_ARN}"
-        LoadBalancerInfo:
-          ContainerName: "strapi"
-          ContainerPort: 1337
-EOF
-
-          ENCODED_APPSPEC=$(base64 appspec.yaml | tr -d '\n')
-
+          CONTENT="version: 1\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: \\\"$TASK_DEF_ARN\\\"\n        LoadBalancerInfo:\n          ContainerName: \\\"strapi\\\"\n          ContainerPort: 1337"
           aws deploy create-deployment \
             --application-name "$CODEDEPLOY_APP" \
             --deployment-group-name "$CODEDEPLOY_DEPLOYMENT_GROUP" \
-            --revision revisionType=AppSpecContent,appSpecContent="{\"content\":\"$ENCODED_APPSPEC\"}" \
+            --revision revisionType=AppSpecContent,appSpecContent="{\"content\":\"$CONTENT\"}" \
             --region "$AWS_REGION"
 
