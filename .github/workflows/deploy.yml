@@ -39,6 +39,7 @@ jobs:
       - name: Trigger CodeDeploy Deployment
         run: |
           echo "Generating AppSpec content..."
+
           APP_SPEC=$(cat <<EOF
 version: 1
 Resources:
@@ -52,7 +53,6 @@ Resources:
 EOF
           )
 
-          # Convert to escaped JSON
           ESCAPED_APP_SPEC=$(echo "$APP_SPEC" | python3 -c 'import json,sys; print(json.dumps({"content": sys.stdin.read()}))')
 
           aws deploy create-deployment \
