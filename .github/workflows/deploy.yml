@@ -52,6 +52,7 @@ Resources:
 EOF
 )
 
+          echo "$CONTENT"
           JSON_PAYLOAD=$(jq -n \
             --arg content "$CONTENT" \
             '{revisionType: "AppSpecContent", appSpecContent: {content: $content}}')
