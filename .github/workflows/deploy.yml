@@ -40,34 +40,29 @@ jobs:
         run: |
           echo "Generating AppSpecContent..."
 
-          CONTENT=$(echo "version: 1
+          CONTENT=$(cat <<EOF
+version: 1
 Resources:
   - TargetService:
       Type: AWS::ECS::Service
       Properties:
-        TaskDefinition: \"$TASK_DEF_ARN\"
+        TaskDefinition: "$TASK_DEF_ARN"
         LoadBalancerInfo:
-          ContainerName: \"strapi\"
-          ContainerPort: 1337")
+          ContainerName: "strapi"
+          ContainerPort: 1337
+EOF
+)
 
-          JSON=$(jq -n \
-            --arg app "$CODEDEPLOY_APP" \
-            --arg dg "$CODEDEPLOY_DEPLOYMENT_GROUP" \
-            --arg content "$CONTENT" \
-            '{
-              applicationName: $app,
-              deploymentGroupName: $dg,
-              revision: {
-                revisionType: "AppSpecContent",
-                appSpecContent: {
-                  content: $content
-                }
-              }
-            }')
-
-          echo "$JSON" > input.json
+          JSON_PAYLOAD=$(jq -n --arg content "$CONTENT" '{
+            revisionType: "AppSpecContent",
+            appSpecContent: {
+              content: $content
+            }
+          }')
 
           aws deploy create-deployment \
-            --cli-input-json file://input.json \
+            --application-name "$CODEDEPLOY_APP" \
+            --deployment-group-name "$CODEDEPLOY_DEPLOYMENT_GROUP" \
+            --cli-input-json "$JSON_PAYLOAD" \
             --region "$AWS_REGION"
 
