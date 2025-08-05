@@ -37,7 +37,7 @@ jobs:
 
       - name: Trigger CodeDeploy Deployment
         run: |
-          cat > appspec.json <<EOF
+          cat <<EOF > appspec.json
 {
   "applicationName": "${CODEDEPLOY_APP}",
   "deploymentGroupName": "${CODEDEPLOY_DEPLOYMENT_GROUP}",
