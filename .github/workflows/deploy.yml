@@ -1,21 +1,28 @@
 - name: Create CodeDeploy Deployment
   id: deploy_cd
+  env:
+    TASK_DEF_ARN: ${{ steps.register_taskdef.outputs.taskDefinitionArn }}
+    CODEDEPLOY_APP: strapi-cd-app-siya
+    CODEDEPLOY_DEPLOYMENT_GROUP: strapi-cd-dg-siya
   run: |
     echo "Generating AppSpec content..."
-    APPSPEC=$(cat <<EOF
-{
-  "revisionType": "AppSpecContent",
-  "appSpecContent": {
-    "content": "version: 1.0\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: $TASK_DEF_ARN\n        LoadBalancerInfo:\n          ContainerName: strapi\n          ContainerPort: 1337"
-  }
-}
-EOF
-)
+
+    APPSPEC=$(jq -n --arg taskDef "$TASK_DEF_ARN" '
+    {
+      revisionType: "AppSpecContent",
+      appSpecContent: {
+        content: "version: 1\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: \"" + $taskDef + "\"\n        LoadBalancerInfo:\n          ContainerName: \"strapi\"\n          ContainerPort: 1337"
+      }
+    }')
+
+    echo "AppSpec JSON:"
+    echo "$APPSPEC"
 
     DEPLOYMENT_ID=$(aws deploy create-deployment \
       --application-name "$CODEDEPLOY_APP" \
       --deployment-group-name "$CODEDEPLOY_DEPLOYMENT_GROUP" \
       --cli-input-json "$APPSPEC" \
+      --region us-east-2 \
       --query "deploymentId" --output text)
 
     echo "DEPLOYMENT_ID=$DEPLOYMENT_ID" >> $GITHUB_ENV

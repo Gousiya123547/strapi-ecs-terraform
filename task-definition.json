@@ -5,7 +5,7 @@
   "containerDefinitions": [
     {
       "name": "strapi",
-      "image": "IMAGE_URI_PLACEHOLDER",
+      "image": "607700977843.dkr.ecr.us-east-2.amazonaws.com/strapi-ecs-kg:latest",
       "essential": true,
       "portMappings": [
         {
@@ -25,6 +25,7 @@
   ],
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "512",
-  "memory": "1024"
+  "memory": "1024",
+  "taskRoleArn": "arn:aws:iam::607700977843:role/strapi-ecs-task-exec-siya"
 }
 

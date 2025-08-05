@@ -9,6 +9,12 @@ resource "aws_codedeploy_deployment_group" "strapi_dg" {
   service_role_arn       = aws_iam_role.codedeploy_role.arn
   deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
 
+  # ✅ REQUIRED for ECS Blue/Green
+  deployment_style {
+    deployment_type   = "BLUE_GREEN"
+    deployment_option = "WITH_TRAFFIC_CONTROL"
+  }
+
   ecs_service {
     cluster_name = aws_ecs_cluster.strapi_cluster.name
     service_name = aws_ecs_service.strapi_service.name
@@ -22,6 +28,7 @@ resource "aws_codedeploy_deployment_group" "strapi_dg" {
       target_group {
         name = aws_lb_target_group.strapi_tg_green.name
       }
+
       prod_traffic_route {
         listener_arns = [aws_lb_listener.strapi_listener.arn]
       }
