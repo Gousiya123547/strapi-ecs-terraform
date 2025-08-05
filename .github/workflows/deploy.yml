@@ -1,4 +1,4 @@
-name: Deploy Strapi to ECS (Blue/Green)
+ame: Deploy Strapi to ECS (Blue/Green)
 
 on:
   push:
@@ -39,4 +39,5 @@ jobs:
       - name: Trigger CodeDeploy Deployment
         run: |
           echo "Generating AppSpec content..."
+
 
