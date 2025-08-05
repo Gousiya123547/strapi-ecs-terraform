@@ -30,14 +30,17 @@ jobs:
         id: register_taskdef
         run: |
           TASK_DEF_ARN=$(aws ecs register-task-definition \
-            --cli-input-json file://task-definition.json \
+            --cli-input-json file://ecs-task-def.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
           echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
-          echo "taskDefinitionArn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
 
       - name: Trigger CodeDeploy Deployment
         run: |
-          echo "Generating AppSpec content..."
-
+          aws deploy create-deployment \
+            --application-name $CODEDEPLOY_APP \
+            --deployment-group-name $CODEDEPLOY_DEPLOYMENT_GROUP \
+            --revision revisionType=AppSpecContent,appSpecContent="{\"content\":\"version: 1\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: \\\"$TASK_DEF_ARN\\\"\n        LoadBalancerInfo:\n          ContainerName: \\\"strapi\\\"\n          ContainerPort: 1337\"}" \
+            --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
+            --region $AWS_REGION
 
