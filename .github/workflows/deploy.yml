@@ -37,20 +37,15 @@ jobs:
 
       - name: Trigger CodeDeploy Deployment
         run: |
-          cat <<EOF > appspec.json
-{
-  "applicationName": "${CODEDEPLOY_APP}",
-  "deploymentGroupName": "${CODEDEPLOY_DEPLOYMENT_GROUP}",
-  "revision": {
-    "revisionType": "AppSpecContent",
-    "appSpecContent": {
-      "content": "version: 1\\nResources:\\n  - TargetService:\\n      Type: AWS::ECS::Service\\n      Properties:\\n        TaskDefinition: \\\"${TASK_DEF_ARN}\\\"\\n        LoadBalancerInfo:\\n          ContainerName: \\\"strapi\\\"\\n          ContainerPort: 1337"
-    }
-  }
-}
-EOF
+          CONTENT="version: 1\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: \\\"$TASK_DEF_ARN\\\"\n        LoadBalancerInfo:\n          ContainerName: \\\"strapi\\\"\n          ContainerPort: 1337"
+
+          JSON=$(jq -n \
+            --arg content "$CONTENT" \
+            '{revisionType: "AppSpecContent", appSpecContent: {content: $content}}')
 
           aws deploy create-deployment \
-            --cli-input-json file://appspec.json \
+            --application-name "$CODEDEPLOY_APP" \
+            --deployment-group-name "$CODEDEPLOY_DEPLOYMENT_GROUP" \
+            --revision "$JSON" \
             --region "$AWS_REGION"
 
