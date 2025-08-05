@@ -38,25 +38,20 @@ jobs:
 
       - name: Trigger CodeDeploy Deployment
         run: |
-          echo "Generating AppSpec content..."
-          APP_SPEC=$(cat <<EOF
-version: 1
+          echo "version: 1
 Resources:
   - TargetService:
       Type: AWS::ECS::Service
       Properties:
-        TaskDefinition: "$TASK_DEF_ARN"
+        TaskDefinition: \"$TASK_DEF_ARN\"
         LoadBalancerInfo:
-          ContainerName: "strapi"
-          ContainerPort: 1337
-EOF
-)
-          ESCAPED_APP_SPEC=$(echo "$APP_SPEC" | python3 -c 'import json,sys; print(json.dumps({"content": sys.stdin.read()}))')
+          ContainerName: \"strapi\"
+          ContainerPort: 1337" > appspec.yaml
 
           aws deploy create-deployment \
             --application-name "$CODEDEPLOY_APP" \
             --deployment-group-name "$CODEDEPLOY_DEPLOYMENT_GROUP" \
-            --revision "revisionType=AppSpecContent,appSpecContent=$ESCAPED_APP_SPEC" \
+            --revision file://appspec.yaml \
             --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
             --region "$AWS_REGION"
 
