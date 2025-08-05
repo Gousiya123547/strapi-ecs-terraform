@@ -38,15 +38,17 @@ jobs:
 
       - name: Trigger CodeDeploy Deployment
         run: |
-          echo "version: 1
+          cat > appspec.yaml <<EOF
+version: 1
 Resources:
   - TargetService:
       Type: AWS::ECS::Service
       Properties:
-        TaskDefinition: \"$TASK_DEF_ARN\"
+        TaskDefinition: "$TASK_DEF_ARN"
         LoadBalancerInfo:
-          ContainerName: \"strapi\"
-          ContainerPort: 1337" > appspec.yaml
+          ContainerName: "strapi"
+          ContainerPort: 1337
+EOF
 
           aws deploy create-deployment \
             --application-name "$CODEDEPLOY_APP" \
