@@ -30,7 +30,7 @@ jobs:
         id: register_taskdef
         run: |
           TASK_DEF_ARN=$(aws ecs register-task-definition \
-            --cli-input-json file://ecs-task-def.json \
+            --cli-input-json file://task-definition.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
           echo "taskDefinitionArn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
@@ -39,13 +39,16 @@ jobs:
       - name: Trigger CodeDeploy Deployment
         run: |
           echo "Generating AppSpecContent..."
-          APPSPEC=$(jq -n --arg taskDef "$TASK_DEF_ARN" '
-          {
-            revisionType: "AppSpecContent",
-            appSpecContent: {
-              content: "version: 1\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: \"" + $taskDef + "\"\n        LoadBalancerInfo:\n          ContainerName: \"strapi\"\n          ContainerPort: 1337"
-            }
-          }')
+
+          APPSPEC=$(jq -n \
+            --arg taskDef "$TASK_DEF_ARN" \
+            --arg content "version: 1\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: \"$taskDef\"\n        LoadBalancerInfo:\n          ContainerName: \"strapi\"\n          ContainerPort: 1337" \
+            '{
+              revisionType: "AppSpecContent",
+              appSpecContent: {
+                content: $content
+              }
+            }')
 
           aws deploy create-deployment \
             --application-name "$CODEDEPLOY_APP" \
