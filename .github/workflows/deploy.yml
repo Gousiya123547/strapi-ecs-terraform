@@ -1,46 +1,22 @@
-name: Deploy Strapi to ECS (Blue/Green)
-
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    env:
-      AWS_REGION: us-east-2
-      CODEDEPLOY_APP: strapi-cd-app-siya
-      CODEDEPLOY_DEPLOYMENT_GROUP: strapi-cd-dg-siya
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Register ECS Task Definition
-        id: register_taskdef
-        run: |
-          TASK_DEF_ARN=$(aws ecs register-task-definition \
-            --cli-input-json file://ecs-task-def.json \
-            --query 'taskDefinition.taskDefinitionArn' \
-            --output text)
-          echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
-
       - name: Trigger CodeDeploy Deployment
         run: |
+          APP_SPEC=$(cat <<EOF
+version: 1
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: "$TASK_DEF_ARN"
+        LoadBalancerInfo:
+          ContainerName: "strapi"
+          ContainerPort: 1337
+EOF
+          )
+
           aws deploy create-deployment \
             --application-name $CODEDEPLOY_APP \
             --deployment-group-name $CODEDEPLOY_DEPLOYMENT_GROUP \
-            --revision revisionType=AppSpecContent,appSpecContent="{\"content\":\"version: 1\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: \\\"$TASK_DEF_ARN\\\"\n        LoadBalancerInfo:\n          ContainerName: \\\"strapi\\\"\n          ContainerPort: 1337\"}" \
+            --revision revisionType=AppSpecContent,appSpecContent="{\"content\":\"$(echo "$APP_SPEC" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')\"}" \
             --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
             --region $AWS_REGION
 
