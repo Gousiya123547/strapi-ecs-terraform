@@ -54,6 +54,6 @@ EOF
           aws deploy create-deployment \
             --application-name "$CODEDEPLOY_APP" \
             --deployment-group-name "$CODEDEPLOY_DEPLOYMENT_GROUP" \
-            --revision "revisionType=AppSpecContent,appSpecContent={\"content\":\"$ENCODED_APPSPEC\",\"sha256\":\"\"}" \
+            --revision revisionType=AppSpecContent,appSpecContent="{\"content\":\"$ENCODED_APPSPEC\"}" \
             --region "$AWS_REGION"
 
