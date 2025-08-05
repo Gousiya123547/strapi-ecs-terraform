@@ -37,12 +37,13 @@ jobs:
 
       - name: Trigger CodeDeploy Deployment
         run: |
-          APP_SPEC_CONTENT="version: 1\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: \\\"$TASK_DEF_ARN\\\"\n        LoadBalancerInfo:\n          ContainerName: \\\"strapi\\\"\n          ContainerPort: 1337"
+          # Create AppSpec content with full escaping
+          APP_SPEC_JSON="{\"version\":\"1\",\"Resources\":[{\"TargetService\":{\"Type\":\"AWS::ECS::Service\",\"Properties\":{\"TaskDefinition\":\"$TASK_DEF_ARN\",\"LoadBalancerInfo\":{\"ContainerName\":\"strapi\",\"ContainerPort\":1337}}}}]}"
 
           aws deploy create-deployment \
             --application-name "$CODEDEPLOY_APP" \
             --deployment-group-name "$CODEDEPLOY_DEPLOYMENT_GROUP" \
-            --revision revisionType=AppSpecContent,appSpecContent="{\"content\":\"$APP_SPEC_CONTENT\"}" \
+            --revision revisionType=AppSpecContent,appSpecContent="{\"content\":\"$APP_SPEC_JSON\"}" \
             --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
             --region "$AWS_REGION"
 
