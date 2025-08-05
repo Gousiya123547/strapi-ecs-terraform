@@ -40,24 +40,20 @@ jobs:
         run: |
           echo "Generating AppSpecContent..."
 
-          CONTENT=$(cat <<EOF
-version: 1
+          CONTENT=$(echo "version: 1
 Resources:
   - TargetService:
       Type: AWS::ECS::Service
       Properties:
-        TaskDefinition: "$TASK_DEF_ARN"
+        TaskDefinition: \"$TASK_DEF_ARN\"
         LoadBalancerInfo:
-          ContainerName: "strapi"
-          ContainerPort: 1337
-EOF
-)
+          ContainerName: \"strapi\"
+          ContainerPort: 1337")
 
           JSON=$(jq -n \
             --arg app "$CODEDEPLOY_APP" \
             --arg dg "$CODEDEPLOY_DEPLOYMENT_GROUP" \
             --arg content "$CONTENT" \
-            --arg region "$AWS_REGION" \
             '{
               applicationName: $app,
               deploymentGroupName: $dg,
@@ -69,8 +65,8 @@ EOF
               }
             }')
 
-          echo "Creating deployment..."
           echo "$JSON" > input.json
+
           aws deploy create-deployment \
             --cli-input-json file://input.json \
             --region "$AWS_REGION"
