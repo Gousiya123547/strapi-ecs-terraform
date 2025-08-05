@@ -34,11 +34,12 @@ jobs:
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
           echo "taskDefinitionArn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
+          echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
 
       - name: Replace task definition in AppSpec
         run: |
           cp appspec.yml appspec-rendered.yml
-          sed -i "s|PLACEHOLDER_TASK_DEF_ARN|${{ steps.register_taskdef.outputs.taskDefinitionArn }}|g" appspec-rendered.yml
+          sed -i "s|PLACEHOLDER_TASK_DEF_ARN|$TASK_DEF_ARN|g" appspec-rendered.yml
 
       - name: Trigger CodeDeploy deployment
         run: |
