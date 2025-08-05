@@ -34,29 +34,25 @@ jobs:
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
           echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
-          echo "taskDefinitionArn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
 
       - name: Trigger CodeDeploy Deployment
         run: |
-          echo "version: 1
+          CONTENT=$(cat <<EOF
+version: 1
 Resources:
   - TargetService:
       Type: AWS::ECS::Service
       Properties:
-        TaskDefinition: \"$TASK_DEF_ARN\"
+        TaskDefinition: "$TASK_DEF_ARN"
         LoadBalancerInfo:
-          ContainerName: \"strapi\"
-          ContainerPort: 1337" > appspec.yaml
-
-          JSON=$(jq -n \
-            --arg content "$(<appspec.yaml)" \
-            '{revisionType: "AppSpecContent", appSpecContent: {content: $content}}')
-
-          echo "$JSON" > revision.json
+          ContainerName: "strapi"
+          ContainerPort: 1337
+EOF
+          )
 
           aws deploy create-deployment \
             --application-name "$CODEDEPLOY_APP" \
             --deployment-group-name "$CODEDEPLOY_DEPLOYMENT_GROUP" \
-            --revision file://revision.json \
+            --revision "revisionType=AppSpecContent,appSpecContent={content=$CONTENT}" \
             --region "$AWS_REGION"
 
