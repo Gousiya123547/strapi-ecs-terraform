@@ -38,22 +38,20 @@ jobs:
 
       - name: Trigger CodeDeploy Deployment
         run: |
-          echo "Generating AppSpecContent..."
+          echo "Generating AppSpec content..."
 
-          CONTENT=$(cat <<EOF
-version: 1
-Resources:
-  - TargetService:
-      Type: AWS::ECS::Service
-      Properties:
-        TaskDefinition: "$TASK_DEF_ARN"
-        LoadBalancerInfo:
-          ContainerName: "strapi"
-          ContainerPort: 1337
-EOF
-)
+          APPSPEC_CONTENT=$(printf "%s\n" \
+          "version: 1" \
+          "Resources:" \
+          "  - TargetService:" \
+          "      Type: AWS::ECS::Service" \
+          "      Properties:" \
+          "        TaskDefinition: \"$TASK_DEF_ARN\"" \
+          "        LoadBalancerInfo:" \
+          "          ContainerName: \"strapi\"" \
+          "          ContainerPort: 1337")
 
-          JSON_PAYLOAD=$(jq -n --arg content "$CONTENT" '{
+          JSON_PAYLOAD=$(jq -n --arg content "$APPSPEC_CONTENT" '{
             revisionType: "AppSpecContent",
             appSpecContent: {
               content: $content
