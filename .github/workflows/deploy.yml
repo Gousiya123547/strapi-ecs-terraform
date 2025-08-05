@@ -35,29 +35,18 @@ jobs:
             --output text)
           echo "taskDefinitionArn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
 
-      - name: Trigger CodeDeploy Deployment
+      - name: Replace task definition in AppSpec
         run: |
-          TASK_DEF_ARN="${{ steps.register_taskdef.outputs.taskDefinitionArn }}"
+          cp appspec.yml appspec-rendered.yml
+          sed -i "s|PLACEHOLDER_TASK_DEF_ARN|${{ steps.register_taskdef.outputs.taskDefinitionArn }}|g" appspec-rendered.yml
 
-          APP_SPEC=$(cat <<EOF
-version: 1
-Resources:
-  - TargetService:
-      Type: AWS::ECS::Service
-      Properties:
-        TaskDefinition: "$TASK_DEF_ARN"
-        LoadBalancerInfo:
-          ContainerName: "strapi"
-          ContainerPort: 1337
-EOF
-)
-
-          ESCAPED_APP_SPEC=$(echo "$APP_SPEC" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
-
+      - name: Trigger CodeDeploy deployment
+        run: |
+          CONTENT=$(cat appspec-rendered.yml | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
           aws deploy create-deployment \
             --application-name "$CODEDEPLOY_APP" \
             --deployment-group-name "$CODEDEPLOY_DEPLOYMENT_GROUP" \
-            --revision revisionType=AppSpecContent,appSpecContent="{\"content\":\"$ESCAPED_APP_SPEC\"}" \
+            --revision revisionType=AppSpecContent,appSpecContent="{\"content\":\"$CONTENT\"}" \
             --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
             --region "$AWS_REGION"
 
