@@ -44,5 +44,13 @@ jobs:
   "revision": {
     "revisionType": "AppSpecContent",
     "appSpecContent": {
-      "content": "version: 1\nResources:\n  - Target
+      "content": "version: 1\\nResources:\\n  - TargetService:\\n      Type: AWS::ECS::Service\\n      Properties:\\n        TaskDefinition: \\\"${TASK_DEF_ARN}\\\"\\n        LoadBalancerInfo:\\n          ContainerName: \\\"strapi\\\"\\n          ContainerPort: 1337"
+    }
+  }
+}
+EOF
+
+          aws deploy create-deployment \
+            --cli-input-json file://appspec.json \
+            --region "$AWS_REGION"
 
