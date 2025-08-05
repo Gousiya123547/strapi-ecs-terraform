@@ -37,20 +37,19 @@ jobs:
 
       - name: Trigger CodeDeploy Deployment
         run: |
-          APP_SPEC=$(cat <<'EOF'
+          APP_SPEC=$(cat <<EOF
 version: 1
 Resources:
   - TargetService:
       Type: AWS::ECS::Service
       Properties:
-        TaskDefinition: "__TASK_DEF_ARN__"
+        TaskDefinition: "$TASK_DEF_ARN"
         LoadBalancerInfo:
           ContainerName: "strapi"
           ContainerPort: 1337
 EOF
           )
 
-          APP_SPEC=${APP_SPEC/__TASK_DEF_ARN__/$TASK_DEF_ARN}
           ESCAPED_APP_SPEC=$(echo "$APP_SPEC" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
 
           aws deploy create-deployment \
