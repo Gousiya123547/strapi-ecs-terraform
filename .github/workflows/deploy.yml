@@ -33,6 +33,7 @@ jobs:
             --cli-input-json file://ecs-task-def.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
+          echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
           echo "taskDefinitionArn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
 
       - name: Trigger CodeDeploy Deployment
@@ -50,7 +51,7 @@ Resources:
           ContainerName: "strapi"
           ContainerPort: 1337
 EOF
-)
+          )
 
           ESCAPED_APP_SPEC=$(echo "$APP_SPEC" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
 
