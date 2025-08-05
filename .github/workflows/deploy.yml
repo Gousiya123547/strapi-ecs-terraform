@@ -40,6 +40,5 @@ jobs:
             --application-name strapi-cd-app-siya \
             --deployment-group-name strapi-cd-dg-siya \
             --revision "{\"revisionType\":\"AppSpecContent\",\"appSpecContent\":{\"content\":\"$CONTENT\"}}" \
-            --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
-            --file-exists-behavior OVERWRITE
+            --deployment-config-name CodeDeployDefault.ECSAllAtOnce
 
